@@ -1,0 +1,196 @@
+#include "Definitions.acs"
+
+//===================================================================
+//Stat Events
+//===================================================================
+
+//Account for:
+//DM_FRAGS, DM_DEATHS, DM_KDR, DM_KILLS, DM_ASSISTS, DM_SUICIDE
+//CTF_TOUCHES, CTF_PTOUCHES, CTF_CAPTURES, CTF_RETURNS, CTF_ASSISTS
+script "StatEvents" (int type, int arg1, int arg2) EVENT
+{
+
+	switch(type)
+	{
+		case "GAMEEVENT_PLAYERFRAGS":
+			if (arg1 == arg2)
+			{
+				playerStatInfo[arg1][DM_FRAGS]--;
+				pKillCount[arg1][CURRENT_KILL_COUNT]--;
+				pKillCount[arg1][DM_DEATHS]++;
+				pSpreeCount[arg1] = 0;
+				return;
+			}
+
+			//player 1 handler
+			playerStatInfo[arg1][DM_FRAGS]++;
+			pKillCount[arg1][CURRENT_KILL_COUNT]++;
+			pStatInfo[arg1][DM_KDR] = pStatInfo[arg1][DM_FRAGS] / pStatInfo[arg1][DM_DEATHS];
+
+			//increases spree count based on current kill count
+			switch (pKillCount[arg1][CURRENT_KILL_COUNT])
+			{
+				case 5:
+					pSpreeCount[arg1][SPREE_TOTAL_COUNT]++;
+					pSpreeCount[arg1][SPREE_1_COUNT]++;
+					break;
+				case 10:
+					pSpreeCount[arg1][SPREE_TOTAL_COUNT]++;
+					pSpreeCount[arg1][SPREE_2_COUNT]++;
+					break;
+				case 15:
+					pSpreeCount[arg1][SPREE_TOTAL_COUNT]++;
+					pSpreeCount[arg1][SPREE_3_COUNT]++;
+					break;
+				case 20:
+					pSpreeCount[arg1][SPREE_TOTAL_COUNT]++;
+					pSpreeCount[arg1][SPREE_4_COUNT]++;
+					break;
+				case 25:
+					pSpreeCount[arg1][SPREE_TOTAL_COUNT]++;
+					pSpreeCount[arg1][SPREE_5_COUNT]++;
+					break;
+				case 30:
+					pSpreeCount[arg1][SPREE_TOTAL_COUNT]++;
+					pSpreeCount[arg1][SPREE_6_COUNT]++;
+					break;
+				other:
+					break;
+			}
+
+			//player 2 handler
+			pStatInfo[arg2][DM_DEATHS]++;
+			pKillCount[arg2][CURRENT_KILL_COUNT] = 0;
+			pSpreeCount[arg1][SPREE_CURRENT_COUNT] = 0;
+			pStatInfo[arg2][DM_KDR] = pStatInfo[arg2][DM_FRAGS] / pStatInfo[arg2][DM_DEATHS];
+			
+			//ends Dead Player's Spree
+			//if(onSpree[arg1])
+				//endSpree(arg1)
+			//playerKDR[arg1] = GetPlayerScore(arg1, 0] / GetPlayerScore(arg1, 3]; 
+			break;
+
+		case "GAMEEVENT_TOUCHES":
+			if (teamInfo[arg1][TEAM_FLAG_TAKEN])
+			{
+				pCTFInfo[arg1][CTF_PTOUCHES]++;
+			}
+			if (!teamInfo[arg1][TEAM_FLAG_TAKEN])
+			{
+				teamInfo[arg1][TEAM_FLAG_TAKEN] = 1;
+				pCTFInfo[arg1][CTF_TOUCHES]++;
+			}
+			break;
+
+		case "GAMEEVENT_RETURNS":
+			if (teamInfo[arg1][TEAM_FLAG_TAKEN])
+			{
+				teamInfo[arg1][TEAM_FLAG_TAKEN] = 0;
+				if(arg2 == 1)
+					pCTFInfo[arg1][CTF_RETURNS]++;
+			}
+			break;
+
+		case "GAMEEVENT_CAPTURES":
+			pCTFInfo[arg1][CTF_CAPTURES] += arg2;
+			teamInfo[arg1][TEAM_POINTS] += arg2;
+			teamInfo[arg1][TEAM_FLAG_TAKEN] = 0;
+			//teamInfo[arg1][TEAM_FLAG_TAKEN] = false;
+			if (arg1 != -1)
+				pStatInfo[arg1][CTF_ASSISTS]++;
+			break;
+
+		case "GAMEEVENT_ACTOR_SPAWNED" && arg2 :
+		if (arg2)
+		{
+			switch (GetActorClass(arg1))
+			{
+				case "SoulSphere":
+					log(s:"SoulSphere spawned!");
+					break;
+				case "MegaSphere":
+					log(s:"MegaSphere spawned!");
+					break;
+				case "BlueArmor"
+					log(s:"BlueArmor spawned!");
+					break;
+				case "GreenArmor"
+					log(s:"GreenArmor spawned!");
+					break;
+				case "Berserk"
+					log(s:"Berserk spawned!");
+					break;
+				case "Invisibility"
+					log(s:"Invisibility spawned!");
+					break;
+			}
+		}
+		
+    }
+}
+
+script "NewStatHandling" (int type, int arg1, int arg2) EVENT
+{
+	
+}
+
+
+int GetMaxShotsForMod(int mod)
+{
+	switch (mod)
+	{
+	case MOD_FIST:
+	case MOD_PISTOL:
+	case MOD_CHAINGUN:
+	case MOD_ROCKET:
+	case MOD_R_SPLASH:
+	case MOD_CHAINSAW:
+	case MOD_PLASMARIFLE:
+	case MOD_BFG_BOOM:
+		return 1;
+	case MOD_SHOTGUN:
+		return 7;
+	case MOD_BFG_SPLASH:
+		return 40;
+	case MOD_SSHOTGUN:
+		return 20;
+	}
+
+	return 1;
+}
+
+
+Script "Powerup_Spawned" (int item)
+{
+	
+}
+
+Script "Powerup_Taken" (int item)
+{
+	
+}
+
+
+/* function void prepSpreeSpecial(void) {
+  onSpree[PlayerNumber()] = false; // May have carried value from a disconnection.
+  SetThingSpecial(0, ACS_ExecuteAlways, DEATH_SPECIAL, 0, PlayerNumber(), 0, 0);
+}
+
+script SPREE_MESSAGE (int op, int arg) CLIENTSIDE 
+{
+	
+} */
+// int playerSpreeInfo[SPREE_TOTAL, SPREE_HIGHEST, SPREE_CURRENT];
+// int playerHighestSpree[MAX_PLAYERS];
+//int playerTotalKills[MAX_PLAYERS];
+//int playerTotalDeaths[MAX_PLAYERS];
+
+
+// bool teamFlagTaken[MAX_TEAMS];
+
+// SCORE_FRAGS = 0
+// How many frags this player has.
+// SCORE_POINTS = 1
+// How many points this player has.
+// SCORE_DEATHS = 3
+// How many times this player died.

@@ -1,0 +1,6 @@
+Actor GotBlue : Inventory { }
+Actor GotGreen : Inventory { }
+Actor GotSoul : Inventory { }
+Actor GotMega : Inventory { }
+Actor GotBerserk : Invetory { }
+Actor GotInvis : Inventory { }
